@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { request } from "undici";
 import { logger } from "../logger.js";
 
@@ -60,7 +61,7 @@ export class CamofoxClient {
     const data = await this.req<{ tabId: string; url: string }>(
       "POST",
       "/tabs",
-      { userId: this.userId, url },
+      { userId: this.userId, sessionKey: randomUUID(), url },
     );
     return { tabId: data.tabId, url: data.url };
   }
