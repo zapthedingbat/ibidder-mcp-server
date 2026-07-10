@@ -46,9 +46,28 @@ export function registerSearchTools(
       title: "Search i-bidder lots",
       description:
         "Search for individual lots (items) across all auctions on i-bidder.com. " +
-        "Returns lot titles, current bids, estimates, and links to lot details.",
+        "Returns lots with titles, bids, estimates, distance, and links. " +
+        "If a postcode is configured on the server, results default to distance sort. " +
+        "Omit query to browse all lots (e.g. nearest lots with no keyword filter).",
       inputSchema: {
-        query: z.string().describe("Search keywords (e.g. 'wood lathe', 'rolex')"),
+        query: z
+          .string()
+          .optional()
+          .describe("Search keywords (e.g. 'network switch', 'rolex'). Omit to browse all."),
+        postcode: z
+          .string()
+          .optional()
+          .describe("UK postcode to sort by distance from (e.g. 'BS14 0QG'). Uses server default if omitted."),
+        max_distance: z
+          .number()
+          .int()
+          .positive()
+          .optional()
+          .describe("Maximum distance in miles (default: any)"),
+        sort: z
+          .enum(["distance", "publishedDate", "auctionDate"])
+          .optional()
+          .describe("Sort order (default: distance if postcode set, otherwise publishedDate)"),
         page: z
           .number()
           .int()
@@ -57,11 +76,19 @@ export function registerSearchTools(
           .describe("Page number (default 1)"),
       },
     },
-    async ({ query, page }) => {
-      const results = await scraper.searchLots({ query, page });
+    async ({ query, postcode, max_distance, sort, page }) => {
+      const results = await scraper.searchLots({
+        query,
+        postcode,
+        maxDistance: max_distance,
+        sort,
+        page,
+      });
       if (results.length === 0) {
         return textResult({
-          message: `No lots found for "${query}".`,
+          message: query
+            ? `No lots found for "${query}".`
+            : "No lots found.",
           results: [],
         });
       }

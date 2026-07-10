@@ -17,7 +17,7 @@ async function main(): Promise<void> {
     userId: config.camofoxUserId,
   });
 
-  const scraper = new IBidderScraper(camofox);
+  const scraper = new IBidderScraper(camofox, { postcode: config.postcode });
 
   if (config.transport === "stdio") {
     const server = buildServer(scraper);

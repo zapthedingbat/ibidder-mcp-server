@@ -24,6 +24,12 @@ export interface Lot {
   auctioneer?: string;
   /** e.g. "Ending 10 Jul 14:00", "Sold" */
   status?: string;
+  /** e.g. "Bristol" */
+  location?: string;
+  /** e.g. "2 miles" */
+  distance?: string;
+  /** e.g. "14 Jul" */
+  biddingEnds?: string;
 }
 
 /** Full details for a single lot. */
@@ -43,8 +49,16 @@ export interface LotDetail {
   attributes: Record<string, string>;
 }
 
+export type SortTerm = "distance" | "publishedDate" | "auctionDate";
+
 export interface SearchOptions {
-  query: string;
+  query?: string;
   /** Page number (1-based). */
   page?: number;
+  /** UK postcode for distance-sorted search. */
+  postcode?: string;
+  /** Maximum distance in miles (default: any). */
+  maxDistance?: number;
+  /** Sort order (default: distance). */
+  sort?: SortTerm;
 }

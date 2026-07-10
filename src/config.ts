@@ -14,6 +14,7 @@ const envSchema = z.object({
   CAMOFOX_URL: z.string().url().default("http://camofox.internal:9377"),
   CAMOFOX_ACCESS_KEY: z.string().min(1).optional(),
   CAMOFOX_USER_ID: z.string().min(1).default("ibidder"),
+  IBIDDER_POSTCODE: z.string().min(1).optional(),
   MCP_TRANSPORT: z.enum(["http", "stdio"]).default("http"),
   PORT: z.coerce.number().int().positive().default(3000),
   MCP_AUTH_TOKEN: z.string().optional(),
@@ -26,6 +27,7 @@ export interface Config {
   camofoxUrl: string;
   camofoxAccessKey?: string;
   camofoxUserId: string;
+  postcode?: string;
   transport: "http" | "stdio";
   port: number;
   authToken?: string;
@@ -66,6 +68,7 @@ export function loadConfig(argv: string[] = process.argv.slice(2)): Config {
     camofoxUrl: env.CAMOFOX_URL.replace(/\/+$/, ""),
     camofoxAccessKey: env.CAMOFOX_ACCESS_KEY,
     camofoxUserId: env.CAMOFOX_USER_ID,
+    postcode: env.IBIDDER_POSTCODE,
     transport,
     port: env.PORT,
     authToken: env.MCP_AUTH_TOKEN,
