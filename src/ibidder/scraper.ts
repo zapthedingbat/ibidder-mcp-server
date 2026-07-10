@@ -343,6 +343,10 @@ export class IBidderScraper {
             }
           });
 
+          // Commission rate (e.g. "26.00%")
+          const commEl = document.getElementById('commissionsExVAT');
+          const commissionPercent = commEl ? commEl.textContent?.trim() + '%' : undefined;
+
           return {
             title: getText('h1, [class*="lot-title"], [class*="lot-heading"]'),
             url: window.location.href,
@@ -354,6 +358,7 @@ export class IBidderScraper {
             location: getText('[class*="location"]') || undefined,
             saleDate: getText('[class*="sale-date"], [class*="auction-date"], time') || undefined,
             status: getText('[class*="status"], [class*="bidding-status"]') || undefined,
+            commissionPercent,
             imageUrls,
             attributes,
           };

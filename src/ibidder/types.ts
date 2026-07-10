@@ -45,6 +45,8 @@ export interface LotDetail {
   saleDate?: string;
   status?: string;
   imageUrls: string[];
+  /** Buyer's commission percentage ex-VAT (e.g. "26.00%"). */
+  commissionPercent?: string;
   /** Any additional fields scraped from the detail page. */
   attributes: Record<string, string>;
 }
