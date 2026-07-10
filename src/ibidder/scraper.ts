@@ -102,28 +102,29 @@ export class IBidderScraper {
   async searchLots(opts: SearchOptions): Promise<Lot[]> {
     // i-bidder's lot search is JS-driven — the search form calls
     // AddSearchParametersToQuerystring() which builds a URL client-side.
-    // We load the homepage, type into the search box using CamoFox ref
-    // identifiers (from the accessibility tree), then click the search
-    // button to trigger the JS navigation.
+    // We load the homepage and programmatically fill + submit the search
+    // form via evaluate to avoid cookie-consent overlays and ref instability.
     const tab = await this.camofox.createTab(BASE);
     try {
       // Wait for the search box to appear
       await this.camofox.wait(tab.tabId, "[name='main-search-term']", 15000);
 
-      // Dismiss cookie consent if present (blocks interaction)
-      await this.camofox.evaluate(tab.tabId,
-        `document.querySelector('#onetrust-accept-btn-handler, [class*="accept-all"], button[title*="Allow All"]')?.click()`,
-      );
-
-      // Type the query into the search box using the ref from the
-      // accessibility tree (e6 = the "main-search-term" textbox)
-      await this.camofox.type(tab.tabId, {
-        ref: "e6",
-        text: opts.query,
-      });
-
-      // Click the search button (e7 = "search-button")
-      await this.camofox.click(tab.tabId, { ref: "e7" });
+      // Fill the search box and submit the form entirely via JS.
+      // This bypasses cookie consent overlays and the JS-driven onsubmit.
+      await this.camofox.evaluate(tab.tabId, `(() => {
+        const input = document.querySelector('[name="main-search-term"]');
+        if (!input) throw new Error('search input not found');
+        input.value = ${JSON.stringify(opts.query)};
+        const form = input.closest('form');
+        if (form) {
+          // Trigger the site's own JS handler if available
+          if (typeof AddSearchParametersToQuerystring === 'function') {
+            AddSearchParametersToQuerystring(form);
+          } else {
+            form.submit();
+          }
+        }
+      })()`);
 
       // Wait for search results page to load
       await this.camofox.wait(tab.tabId, "a[href*='/lot-'], [class*='lot'], .search-results, h1", 15000).catch(() => {
