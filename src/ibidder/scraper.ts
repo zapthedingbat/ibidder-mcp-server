@@ -24,10 +24,15 @@ const EXTRACT_LOTS_JS = `(() => {
     const lotLink = article.querySelector('a[href*="/lot-"]');
     if (!lotLink) continue;
     const href = lotLink.getAttribute('href') || '';
-    const title = lotLink.textContent?.trim()
-      ?.replace(/^\\d+/, '')  // strip leading lot number prefix
-      .trim() || '';
+    // The img alt text is the cleanest title source (no HTML/JS cruft)
     const img = article.querySelector('img');
+    const altTitle = img?.alt?.trim() || '';
+    // Fallback to link text, stripping any HTML artefacts
+    const rawText = lotLink.textContent?.trim()
+      ?.replace(/^\\d+/, '')  // strip leading lot number prefix
+      ?.replace(/No Image[\\s\\S]*?setTimeout\\([^)]+\\);?/g, '')
+      .trim() || '';
+    const title = altTitle || rawText;
 
     // Auctioneer link (points to /auction-catalogues/<slug>, not a lot)
     const auctLinks = article.querySelectorAll('a[href*="/auction-catalogues/"]');
