@@ -20,7 +20,7 @@ export class IBidderScraper {
 
   /** Search auction catalogues by keyword. */
   async searchAuctions(opts: SearchOptions): Promise<AuctionCatalogue[]> {
-    const params = new URLSearchParams({ query: opts.query });
+    const params = new URLSearchParams({ keyword: opts.query });
     if (opts.page && opts.page > 1) params.set("pagenumber", String(opts.page));
     const url = `${BASE}/auction-catalogues/search-filter?${params}`;
 
@@ -100,14 +100,23 @@ export class IBidderScraper {
 
   /** Search lots (items) across all auctions. */
   async searchLots(opts: SearchOptions): Promise<Lot[]> {
-    // i-bidder lot search uses the keyword search with lot-level results
-    const params = new URLSearchParams({ keyword: opts.query });
-    if (opts.page && opts.page > 1) params.set("page", String(opts.page));
-    const url = `${BASE}/auction-catalogues/lot-search?${params}`;
-
-    const tab = await this.camofox.createTab(url);
+    // i-bidder's lot search is JS-driven: load the homepage, type into the
+    // search box, and submit.  The form navigates to a results page whose
+    // URL we then scrape.
+    const tab = await this.camofox.createTab(BASE);
     try {
-      await this.camofox.wait(tab.tabId, ".lot-search-results, [class*='lot'], .search-results, [class*='result']", 15000).catch(() => {
+      // Wait for the search box to appear
+      await this.camofox.wait(tab.tabId, "[name='main-search-term']", 15000);
+
+      // Type the query and submit
+      await this.camofox.type(tab.tabId, {
+        selector: "[name='main-search-term']",
+        text: opts.query,
+        submit: true,
+      });
+
+      // Wait for search results page to load
+      await this.camofox.wait(tab.tabId, "a[href*='/lot-'], [class*='lot'], .search-results, h1", 15000).catch(() => {
         logger.debug("Wait for lot results selector timed out, proceeding with evaluate");
       });
 
