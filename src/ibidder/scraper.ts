@@ -100,20 +100,30 @@ export class IBidderScraper {
 
   /** Search lots (items) across all auctions. */
   async searchLots(opts: SearchOptions): Promise<Lot[]> {
-    // i-bidder's lot search is JS-driven: load the homepage, type into the
-    // search box, and submit.  The form navigates to a results page whose
-    // URL we then scrape.
+    // i-bidder's lot search is JS-driven — the search form calls
+    // AddSearchParametersToQuerystring() which builds a URL client-side.
+    // We load the homepage, type into the search box using CamoFox ref
+    // identifiers (from the accessibility tree), then click the search
+    // button to trigger the JS navigation.
     const tab = await this.camofox.createTab(BASE);
     try {
       // Wait for the search box to appear
       await this.camofox.wait(tab.tabId, "[name='main-search-term']", 15000);
 
-      // Type the query and submit
+      // Dismiss cookie consent if present (blocks interaction)
+      await this.camofox.evaluate(tab.tabId,
+        `document.querySelector('#onetrust-accept-btn-handler, [class*="accept-all"], button[title*="Allow All"]')?.click()`,
+      );
+
+      // Type the query into the search box using the ref from the
+      // accessibility tree (e6 = the "main-search-term" textbox)
       await this.camofox.type(tab.tabId, {
-        selector: "[name='main-search-term']",
+        ref: "e6",
         text: opts.query,
-        submit: true,
       });
+
+      // Click the search button (e7 = "search-button")
+      await this.camofox.click(tab.tabId, { ref: "e7" });
 
       // Wait for search results page to load
       await this.camofox.wait(tab.tabId, "a[href*='/lot-'], [class*='lot'], .search-results, h1", 15000).catch(() => {
